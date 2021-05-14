@@ -15,10 +15,21 @@ app.use(express.json());
 
 app.use(express.static("public"));
 
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/workout", { useNewUrlParser: true });
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/workout",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false
+
+  });
 
 app.get(`/exercise`, (req, res) =>
   res.sendFile(path.join(__dirname, `public/exercise.html`)
+  ));
+
+app.get(`/stats`, (req, res) =>
+  res.sendFile(path.join(__dirname, `public/stats.html`)
   ));
 
 app.get("/api/workouts", (req, res) => {
@@ -41,9 +52,9 @@ app.get("/api/workouts/:id", (req, res) => {
     });
 });
 
-app.post("/api/workouts", async (req, res) => {
+app.post("/api/workouts/", async (req, res) => {
   try {
-    const response = await db.Workout.create({ type: "workout" })
+    const response = await db.Workout.create({ $push: { exercises: req.body } })
     res.json(response);
   }
   catch (err) {
@@ -57,7 +68,7 @@ app.put("/api/workouts/:id", async (req, res) => {
     res.json(response);
   }
   catch (err) {
-    console.log("error occurred while creating a workout:", err)
+    console.log("error occurred while updating a workout:", err)
   }
 });
 
@@ -70,17 +81,6 @@ app.get("/api/workouts/range", (req, res) => {
       res.json(err);
     });
 });
-
-/* app.get("/populatedworkout", (req, res) => {
-  db.Workout.find({})
-    .populate("exercises")
-    .then(dbWorkout => {
-      res.json(dbWorkout);
-    })
-    .catch(err => {
-      res.json(err);
-    });
-});*/
 
 app.listen(PORT, () => {
   console.log(`App running on port ${PORT}!`);
